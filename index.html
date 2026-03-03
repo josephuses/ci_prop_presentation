@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Confidence Intervals for Proportions</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/simple.min.css" id="theme">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js-plugins@latest/chalkboard/style.css">
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']]
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+    <style>
+        :root {
+            --pshs-blue: #0038A8;
+            --pshs-gold: #FFCD00;
+        }
+        
+        body {
+            background-color: #ffffff;
+        }
+
+        .reveal h1, .reveal h2, .reveal h3 { 
+            color: var(--pshs-blue); 
+            text-transform: none; 
+            margin-top: 20px;
+        }
+        
+        /* Make EVERY slide scrollable if it becomes too long */
+        .reveal .slides {
+            height: 100% !important;
+        }
+        .reveal .slides > section,
+        .reveal .slides > section > section {
+            height: 100% !important;
+            max-height: 100vh !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            padding: 20px 15px 40px 15px !important;
+            box-sizing: border-box;
+        }
+        
+        /* Custom centering for the Title Slide */
+        .title-slide {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            text-align: center;
+        }
+        
+        /* Scrollbar styling for a cleaner look */
+        .reveal .slides section::-webkit-scrollbar {
+            width: 8px;
+        }
+        .reveal .slides section::-webkit-scrollbar-thumb {
+            background-color: var(--pshs-blue);
+            border-radius: 4px;
+        }
+        .reveal .slides section::-webkit-scrollbar-track {
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        
+        /* Side-by-Side Layout for Solutions */
+        .exercise-container { 
+            display: flex; 
+            width: 100%; 
+            gap: 20px; 
+            margin-top: 20px;
+        }
+        .problem-sidebar { 
+            flex: 1; 
+            background: var(--pshs-blue); 
+            color: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            font-size: 1.1em;
+            text-align: left;
+            border-left: 10px solid var(--pshs-gold);
+            height: fit-content;
+        }
+        .solution-content { 
+            flex: 2; 
+            text-align: left; 
+            font-size: 1.1em;
+        }
+        
+        .math-box { 
+            background: #f0f4ff; 
+            border-left: 5px solid var(--pshs-blue); 
+            padding: 15px; 
+            border-radius: 4px; 
+            margin: 10px 0; 
+            font-size: 1.1em;
+        }
+        .pshs-header { 
+            background: var(--pshs-blue); 
+            color: white; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            font-weight: bold; 
+            border-radius: 4px; 
+            text-align: center;
+            font-size: 1.3em;
+        }
+        .axis-text { 
+            font-size: 16px; 
+            fill: var(--pshs-blue); 
+            font-family: sans-serif; 
+            font-weight: bold; 
+        }
+        .problem-text { 
+            font-size: 1.2em; 
+            text-align: left; 
+            line-height: 1.5; 
+            padding: 20px; 
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 5px solid var(--pshs-gold);
+            margin-bottom: 20px;
+        }
+        
+        .d3-chart { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            margin-top: 20px; 
+            padding-bottom: 20px;
+        }
+        
+        /* Custom styling for the tools menu */
+        .custom-menu-panel {
+            padding: 20px;
+            color: #333;
+        }
+        .custom-menu-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--pshs-blue);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border: none;
+        }
+        .custom-menu-btn:hover {
+            background: var(--pshs-gold);
+            color: var(--pshs-blue);
+            font-weight: bold;
+        }
+
+        /* Custom Left Alignment for Reference Slide */
+        .left-align-slide { text-align: left !important; }
+        .left-align-slide h3 { text-align: left !important; }
+    </style>
+</head>
+<body>
+
+<div class="reveal">
+    <div class="slides">
+
+        <section data-menu-title="Title Slide" class="title-slide">
+            <h2>Confidence Intervals for Proportions</h2>
+            <p style="font-size: 1.2em;">Estimating Parameters and Understanding Margin of Error</p>
+            <h3>Based on De Veaux et al (2016)</h3>
+            <div style="margin-top: 40px; border-top: 2px solid var(--pshs-gold); padding-top: 20px;">
+                <p style="font-size: 1.3em; font-weight: bold; margin-bottom: 5px;">Joseph S. Tabadero, Jr.</p>
+                <p style="font-size: 1.1em; color: var(--pshs-blue); margin-top: 0;">
+                    Mathematics Unit<br>
+                    Philippine Science High School-CAR Campus<br>
+                    Baguio City
+                </p>
+            </div>
+            <aside class="notes">
+                Welcome the students. Let them know this module transitions from probability to inference. Today's focus is on estimating true population parameters and understanding what the margin of error actually tells us.
+            </aside>
+        </section>
+
+        <section data-menu-title="What is a Confidence Interval?">
+            <div class="pshs-header">What is a Confidence Interval?</div>
+            <ul style="font-size: 1.1em; text-align: left; display: block;">
+                <li>We have a sample proportion, which we write as $\hat{p}$.</li>
+                <li>When we estimate the standard deviation of a sampling distribution, we call it a standard error.</li>
+                <li>For a sample proportion, $\hat{p}$, the standard error is estimated by:
+                    <div class="math-box">$$SE(\hat{p}) = \sqrt{\frac{\hat{p}\hat{q}}{n}}$$</div>
+                </li>
+                <li>A confidence interval is an interval of values usually of the form: estimate ± margin of error.</li>
+            </ul>
+            <aside class="notes">
+                Remind the class that the standard error is our estimated standard deviation of the sampling distribution. It tells us how much we expect sample proportions to vary from sample to sample.
+            </aside>
+        </section>
+
+        <section data-menu-title="Effect of Sample Size">
+            <div class="pshs-header">Effect of Sample Size on Standard Error</div>
+            <p style="font-size: 1em; text-align: left;">
+                Notice how the standard error decreases as the sample size ($n$) increases. 
+                (This curve assumes $\hat{p} = 0.5$ for the maximum possible variance).
+            </p>
+            <div id="d3-se-curve" class="d3-chart"></div>
+            <p style="font-size: 1em;">
+                Because $n$ is in the denominator of the square root, we must quadruple the sample size just to cut the error in half!
+            </p>
+            <aside class="notes">
+                Point out the inverse square root relationship here. Emphasize that to cut the error in half, they need to quadruple the sample size—a classic conceptual check for exams.
+            </aside>
+        </section>
+
+        <section data-menu-title="Visualizing Confidence Intervals">
+            <div class="pshs-header">Visualizing Confidence Intervals</div>
+            <p style="font-size: 1em;">
+                Simulate drawing samples. Most intervals will capture the true population proportion (the vertical line), but a few will be "duds" that miss entirely!
+            </p>
+            <iframe src="https://josephuses.github.io/ci_viz/" width="100%" height="700px" style="border: 4px solid var(--pshs-blue); border-radius: 8px;"></iframe>
+            <aside class="notes">
+                Use this simulation to show what "95% confidence" actually means. It's about the reliability of the method across many samples, not the probability that a single, already-calculated interval contains the parameter.
+            </aside>
+        </section>
+
+        <section data-menu-title="Example 1: Facebook Status (Problem)">
+            <div class="pshs-header">Example 1: Facebook Status Updates</div>
+            <div class="problem-text">
+                <strong>The Problem:</strong><br><br>
+                Late in 2010, Pew Research surveyed U.S. residents to ask about their use of social networking sites. Of the 156 respondents aged 18 to 22 who use Facebook, 48 said that they update their status at least daily. What can a study like this tell us about 18- to 22-year-old Facebook users in general? Find the 95% confidence interval.
+            </div>
+            <aside class="notes">
+                A highly relatable context for the students. Before clicking to the solution, ask the class to identify the point estimate (p-hat) and the z-star value needed for a 95% confidence interval.
+            </aside>
+        </section>
+
+        <section data-menu-title="Example 1: Facebook Status (Solution)">
+            <div class="pshs-header">Solution 1: Facebook Status Updates</div>
+            <div class="exercise-container">
+                <div class="problem-sidebar">
+                    <strong>Given Values:</strong><br><br>
+                    $n = 156$<br>
+                    $x = 48$<br>
+                    Confidence: 95%
+                </div>
+                <div class="solution-content">
+                    <ul>
+                        <li class="fragment">Sample proportion, $\hat{p}$, of 48/156 or <strong>30.8%</strong>.</li>
+                        <li class="fragment">Calculate the standard error:
+                            <div class="math-box">$$SE(\hat{p}) = \sqrt{\frac{(0.308)(0.692)}{156}} \approx 0.037$$</div>
+                        </li>
+                        <li class="fragment">Reaching out 1.96 SEs on either side of $\hat{p}$ makes us <strong>95%</strong> confident that we'll trap the true proportion, p.</li>
+                        <li class="fragment">$ME=1.96\times SE=1.96\times 0.037\approx 0.073$</li>
+                        <li class="fragment">We are <strong>95%</strong> confident that between <strong>23.4%</strong> and <strong>38.2%</strong> of Facebook users between the ages of 18 and 22 update their status at least daily.</li>
+                    </ul>
+                </div>
+            </div>
+            <aside class="notes">
+                When discussing the conclusion, emphasize the need to state it in context. Translating the raw mathematical interval back into a meaningful real-world statement builds the kind of mathematical literacy emphasized in PISA frameworks.
+            </aside>
+        </section>
+
+        <section data-menu-title="Visualizing the 95% Interval">
+            <div class="pshs-header">Visualizing the 95% Interval</div>
+            <p style="font-size: 1em;">The sampling distribution model for $\hat{p}$ is Normal with a mean of p and a standard deviation we estimate to be 0.037.</p>
+            <div id="d3-normal-curve" class="d3-chart"></div>
+            <aside class="notes">
+                Walk through the normal curve. The shaded area represents our 95% confidence level, reaching roughly two standard errors (1.96 precisely) on either side of the point estimate.
+            </aside>
+        </section>
+
+        <section data-menu-title="Margin of Error (ME)">
+            <div class="pshs-header">Margin of Error (ME)</div>
+            <ul style="font-size: 1.1em; text-align: left; display: block;">
+                <li class="fragment">The extent of the interval on either side of $\hat{p}$ is called the margin of error (ME).</li>
+                <li class="fragment">The more confident we want to be, the larger the margin of error must be.</li>
+                <li class="fragment">Every confidence interval is a balance between certainty and precision.</li>
+                <li class="fragment">To change the confidence level, we change the critical value, $z^*$.
+                    <div class="math-box">$$ME = z^* \sqrt{\frac{\hat{p}\hat{q}}{n}}$$</div>
+                </li>
+            </ul>
+            <aside class="notes">
+                Highlight the trade-off between certainty and precision. If we want to be 99% confident, our interval has to be much wider (less precise). 
+            </aside>
+        </section>
+
+        <section data-menu-title="Example 2: Climate Poll (Problem)">
+            <div class="pshs-header">Example 2: Climate Change Poll</div>
+            <div class="problem-text">
+                <strong>The Problem:</strong><br><br>
+                In April 2011, a Yale/George Mason poll of 1010 U.S. adults found that 40% of the respondents believed that scientists disagreed about whether global warming exists. Using the critical value of z and the standard error based on the observed proportion, what would be the margin of error for a 90% confidence interval?
+            </div>
+            <aside class="notes">
+                Have the class identify how the 90% confidence level changes the critical value compared to the previous example. What is z-star for 90%? (1.645).
+            </aside>
+        </section>
+
+        <section data-menu-title="Example 2: Climate Poll (Solution)">
+            <div class="pshs-header">Solution 2: Climate Change Poll</div>
+            <div class="exercise-container">
+                <div class="problem-sidebar">
+                    <strong>Given Values:</strong><br><br>
+                    $n = 1010$<br>
+                    $\hat{p} = 0.40$<br>
+                    Confidence: 90%
+                </div>
+                <div class="solution-content">
+                    <ul>
+                        <li class="fragment">With $n = 1010$ and $\hat{p} = 0.40$:
+                            <div class="math-box">$$SE(\hat{p}) = \sqrt{\frac{(0.40)(0.60)}{1010}} \approx 0.0154$$</div>
+                        </li>
+                        <li class="fragment">For a <strong>90%</strong> confidence level, $z^* = 1.645$.</li>
+                        <li class="fragment">$ME = 1.645(0.0154) \approx 0.025$.</li>
+                        <li class="fragment">Now the margin of error is only about <strong>2%</strong>, producing a narrower interval.</li>
+                    </ul>
+                </div>
+            </div>
+            <aside class="notes">
+                Notice how the margin of error is tighter here (around 2.5%). Ask the students to evaluate the trade-off of using a 90% interval instead of a 95% interval in a real-world polling context.
+            </aside>
+        </section>
+
+        <section data-menu-title="Assumptions and Conditions">
+            <div class="pshs-header">Assumptions and Conditions</div>
+            <p style="font-size: 1em; text-align: left;">To use a Normal model for the sampling distribution, check these conditions:</p>
+            <ul style="font-size: 1.1em; text-align: left; display: block;">
+                <li class="fragment"><strong>Independence / Randomization:</strong> Were the data sampled at random or generated from a properly randomized experiment?</li>
+                <li class="fragment"><strong>10% Condition:</strong> If you sample more than 10% of a population, the formula for the standard error won't be quite right.</li>
+                <li class="fragment"><strong>Success/Failure Condition:</strong> We must expect at least 10 "successes" ($n\hat{p}\geq 10$) and at least 10 "failures" ($n\hat{q}\geq 10$).</li>
+            </ul>
+            <aside class="notes">
+                Stress that these conditions must be explicitly checked before just plugging numbers into the formula. Showing that the model is appropriate is just as important as the math itself.
+            </aside>
+        </section>
+
+        <section data-menu-title="Example 3: Death Penalty (Problem)">
+            <div class="pshs-header">Example 3: The Death Penalty</div>
+            <div class="problem-text">
+                <strong>The Problem:</strong><br><br>
+                In October 2010, the Gallup Poll asked 510 randomly sampled adults if they believe the death penalty is applied fairly. 58% answered "Fairly". What can we conclude about the opinions of all adults? Build a 95% confidence interval.
+            </div>
+            <aside class="notes">
+                Let them verify the Success/Failure condition on their own first. 58% of 510 is about 296 successes, well over 10.
+            </aside>
+        </section>
+
+        <section data-menu-title="Example 3: Death Penalty (Solution)">
+            <div class="pshs-header">Solution 3: The Death Penalty</div>
+            <div class="exercise-container">
+                <div class="problem-sidebar">
+                    <strong>Given Values:</strong><br><br>
+                    $n = 510$<br>
+                    $\hat{p} = 0.58$<br>
+                    Confidence: 95%
+                </div>
+                <div class="solution-content">
+                    <ul>
+                        <li class="fragment">Check Conditions: Random sample, <10% of pop, $510(0.58) \ge 10$.</li>
+                        <li class="fragment">Find standard error:
+                            <div class="math-box">$$SE(\hat{p}) = \sqrt{\frac{(0.58)(0.42)}{510}} \approx 0.022$$</div>
+                        </li>
+                        <li class="fragment">For <strong>95%</strong> confidence, $z^* = 1.96$. $ME = 1.96(0.022) = 0.043$.</li>
+                        <li class="fragment"><strong>Conclusion:</strong> I am <strong>95%</strong> confident that between <strong>53.7%</strong> and <strong>62.3%</strong> of all U.S. adults think that the death penalty is applied fairly.</li>
+                    </ul>
+                </div>
+            </div>
+            <aside class="notes">
+                Review the standard error calculation. Make sure they understand why we use p-hat when the true population parameter p is unknown.
+            </aside>
+        </section>
+
+        <section data-menu-title="Choosing Your Sample Size">
+            <div class="pshs-header">Choosing Your Sample Size</div>
+            <ul style="font-size: 1.1em; text-align: left; display: block;">
+                <li class="fragment">The question of how large a sample to take is an important step in planning any study.</li>
+                <li class="fragment">To find $n$, we need a value for $\hat{p}$. If we don't know it, we use $\hat{p} = 0.5$ because it determines the largest sample necessary regardless of the true proportion.</li>
+                <li class="fragment">We solve for $n$ using the margin of error formula:
+                    <div class="math-box">$$ME = z^*\sqrt{\frac{\hat{p}\hat{q}}{n}}$$</div>
+                </li>
+                <li class="fragment">This gives us the formula for $n$:
+                    <div class="math-box">$$n=\frac{z^{*2}\hat{p}\hat{q}}{ME^2}$$</div>
+                </li>
+                <li class="fragment">When computing sample sizes, we always round up to the next whole number.</li>
+            </ul>
+            <aside class="notes">
+                Explain why we use 0.5 for p-hat when it's unknown—it maximizes the numerator product (0.25), ensuring the most conservative (largest) sample size estimate. Remind them to ALWAYS round up to ensure they hit the required ME!
+            </aside>
+        </section>
+
+        <section data-menu-title="Example 4: Credit Cards (Problem)">
+            <div class="pshs-header">Example 4: Credit Card Marketing</div>
+            <div class="problem-text">
+                <strong>The Problem:</strong><br><br>
+                A credit card company is about to send out a mailing to test the market for a new credit card. A pilot study suggests that about 0.5% of the people receiving the offer will accept it. To be within a tenth of a percentage point (0.001) of the true rate with 95% confidence, how big does the test mailing have to be?
+            </div>
+            <aside class="notes">
+                This requires algebraic manipulation of the margin of error formula. Have them write down the formula and attempt to isolate n before showing the solution.
+            </aside>
+        </section>
+
+        <section data-menu-title="Example 4: Credit Cards (Solution)">
+            <div class="pshs-header">Solution 4: Credit Card Marketing</div>
+            <div class="exercise-container">
+                <div class="problem-sidebar">
+                    <strong>Given Values:</strong><br><br>
+                    $\hat{p} = 0.005$<br>
+                    $ME = 0.001$<br>
+                    Confidence: 95% ($z^* = 1.96$)
+                </div>
+                <div class="solution-content">
+                    <ul>
+                        <li class="fragment">Using the estimate $\hat{p} = 0.5\%$:
+                            <div class="math-box">$$0.001 = 1.96 \sqrt{\frac{(0.005)(0.995)}{n}}$$</div>
+                        </li>
+                        <li class="fragment">Squaring both sides and solving for $n$: 
+                            <div class="math-box">$$n = \frac{1.96^2(0.005)(0.995)}{(0.001)^2}$$</div>
+                        </li>
+                        <li class="fragment">$n \approx 19,111.96$.</li>
+                        <li class="fragment">Rounding up, we need a sample size of <strong>19,112</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+            <aside class="notes">
+                Walk through the algebra carefully. The rounding rule is crucial here; even if the answer was 19,111.01, we would still round up to 19,112 to guarantee the margin of error is strictly met.
+            </aside>
+        </section>
+
+        <section data-menu-title="Exercise 1: Lying About Age (Problem)">
+            <div class="pshs-header">Exercise 1: Lying About Age</div>
+            <div class="problem-text">
+                <strong>The Problem:</strong><br><br>
+                Pew Research polled a random sample of 799 U.S. teens. 49% reported they had misrepresented their age online.<br><br>
+                a) What is the standard error?<br>
+                b) Find the 95% confidence interval.
+            </div>
+            <aside class="notes">
+                Have the students work this out in groups or individually as a quick formative assessment.
+            </aside>
+        </section>
+
+        <section data-menu-title="Exercise 1: Lying About Age (Solution)">
+            <div class="pshs-header">Solution 1: Lying About Age</div>
+            <div class="exercise-container">
+                <div class="problem-sidebar">
+                    <strong>Given Values:</strong><br><br>
+                    $n = 799$<br>
+                    $\hat{p} = 0.49$<br>
+                    Confidence: 95%
+                </div>
+                <div class="solution-content">
+                    <ul>
+                        <li class="fragment"><strong>a)</strong> Standard Error Calculation:
+                            <div class="math-box">$$SE(\hat{p}) = \sqrt{\frac{0.49 \times 0.51}{799}} \approx 0.018$$</div>
+                        </li>
+                        <li class="fragment"><strong>b)</strong> Margin of Error ($ME$) Calculation:<br>
+                            <div class="math-box">$ME=1.96\times SE=1.96\times 0.018\approx 0.035$</div>
+                        </li>
+                        <li class="fragment"> <strong>c)</strong>Confidence Interval Calculation ($\hat p\pm ME$):<br>
+                            <div class="math-box">$\hat p-ME=0.49 - 0.035\approx 0.455$<br>
+                                $\hat p-ME=0.49 + 0.035\approx 0.525$                        
+                            </div>                        
+                        </li>
+                        <li class="fragment"><strong>d)</strong> We are <strong>95%</strong> confident that, if we were to ask all U.S. teens whether they have misrepresented their age online, between <strong>45.5%</strong> and <strong>52.5%</strong> of them would say they have.</li>
+                    </ul>
+                </div>
+            </div>
+            <aside class="notes">
+                Check their interpretations for part b. Make sure they use language indicating confidence about the *population* proportion, not just the sample.
+            </aside>
+        </section>
+
+        <section data-menu-title="Exercise 5: Wrong Direction (Problem)">
+            <div class="pshs-header">Exercise 5: Wrong Direction</div>
+            <div class="problem-text">
+                <strong>The Problem:</strong><br><br>
+                A survey asked a random sample of 402 adult Wisconsin residents whether they think things in the country are going in the right direction or in the wrong direction. 66% said that things were going in the wrong direction.<br><br>
+                a) Calculate the margin of error for 90% confidence.<br>
+                b) Would the margin of error be larger or smaller for 95% confidence?
+            </div>
+            <aside class="notes">
+                Part b is a great conceptual check. Ask for a show of hands before revealing the answer.
+            </aside>
+        </section>
+
+        <section data-menu-title="Exercise 5: Wrong Direction (Solution)">
+            <div class="pshs-header">Solution 5: Wrong Direction</div>
+            <div class="exercise-container">
+                <div class="problem-sidebar">
+                    <strong>Given Values:</strong><br><br>
+                    $n = 402$<br>
+                    $\hat{p} = 0.66$<br>
+                    Confidence: 90%
+                </div>
+                <div class="solution-content">
+                    <ul>
+                        <li class="fragment"><strong>a)</strong> $SE = \sqrt{\frac{0.66 \times 0.34}{402}} \approx 0.0236$. The Margin of Error using $z^* = 1.645$ is $1.645 \times 0.0236 \approx 0.039$, or <strong>3.9%</strong>.</li>
+                        <li class="fragment"><strong>b)</strong> The ME for 95% confidence would be larger. The critical value of 1.96 is greater than the 1.645 needed for 90% confidence.</li>
+                    </ul>
+                </div>
+            </div>
+            <aside class="notes">
+                Reiterate the relationship between confidence level and margin of error to close out the lesson. Higher confidence means a wider net (larger margin of error).
+            </aside>
+        </section>
+
+        <section data-menu-title="Seatwork Problems">
+            <div class="pshs-header" style="background-color: var(--pshs-gold); color: var(--pshs-blue);">Seatwork Exercises</div>
+            <p style="font-size: 1.1em; font-weight: bold; text-align: left;">Please answer the following three problems on your own:</p>
+            
+            <div class="problem-text" style="font-size: 0.9em;">
+                <strong>1. Conceptual Factors:</strong> Several factors are involved in the creation of a confidence interval. Among them are the sample size, the level of confidence, and the margin of error. Which statements are true?<br>
+                a) For a given sample size, higher confidence means a smaller margin of error.<br>
+                b) For a specified confidence level, larger samples provide smaller margins of error.<br>
+                c) For a fixed margin of error, larger samples provide greater confidence.<br>
+                d) For a given confidence level, halving the margin of error requires a sample twice as large.
+            </div>
+
+            <div class="problem-text" style="font-size: 0.9em;">
+                <strong>2. Teenage Drivers:</strong> An insurance company checks police records on 582 accidents selected at random and notes that teenagers were at the wheel in 91 of them.<br>
+                a) Create a 95% confidence interval for the percentage of all auto accidents that involve teenage drivers.<br>
+                b) Explain what your interval means.<br>
+                c) Explain what "95% confidence" means.<br>
+                d) A politician says, "In one of every five auto accidents, a teenager is behind the wheel." Does your confidence interval support or contradict this statement? Explain.
+            </div>
+
+            <div class="problem-text" style="font-size: 0.9em;">
+                <strong>3. Deer Ticks:</strong> Wildlife biologists inspect 153 deer taken by hunters and find 32 of them carrying ticks that test positive for Lyme disease.<br>
+                a) Create a 90% confidence interval for the percentage of deer that may carry such ticks.<br>
+                b) If the scientists want to cut the margin of error in half, how many deer must they inspect?<br>
+                c) What concerns do you have about this sample?
+            </div>
+            <aside class="notes">
+                Give the students sufficient time to work through these problems. Remind them to check assumptions and conditions carefully for the computational problems!
+            </aside>
+        </section>
+
+        <section data-menu-title="Seatwork 1 Solution">
+            <div class="pshs-header" style="background-color: var(--pshs-gold); color: var(--pshs-blue);">Seatwork 1: Solutions</div>
+            <div class="problem-text" style="font-size: 0.95em;">
+                <strong>1. Conceptual Factors:</strong>
+            </div>
+            <ul style="font-size: 1.1em; text-align: left; display: block;">
+                <li class="fragment"><strong>a) False.</strong> Higher confidence requires a <em>wider</em> interval, meaning a <em>larger</em> margin of error.</li>
+                <li class="fragment"><strong>b) True.</strong> Dividing by a larger $\sqrt{n}$ shrinks the standard error and the margin of error.</li>
+                <li class="fragment"><strong>c) True.</strong> A larger sample gives more precision, allowing you to cover the same fixed margin of error with a higher level of confidence.</li>
+                <li class="fragment"><strong>d) False.</strong> Because $n$ is under a square root, halving the margin of error requires a sample <strong>four times</strong> as large (not twice).</li>
+            </ul>
+        </section>
+
+        <section data-menu-title="Seatwork 2 Solution">
+            <div class="pshs-header" style="background-color: var(--pshs-gold); color: var(--pshs-blue);">Seatwork 2: Solutions</div>
+            <div class="exercise-container">
+                <div class="problem-sidebar">
+                    <strong>Given Values:</strong><br><br>
+                    $n = 582$<br>
+                    $x = 91$<br>
+                    $\hat{p} = \frac{91}{582} \approx 15.6\%$<br>
+                    Confidence: 95%
+                </div>
+                <div class="solution-content">
+                    <ul style="font-size: 0.95em;">
+                        <li class="fragment"><strong>a)</strong> $SE(\hat{p}) = \sqrt{\frac{0.156 \times 0.844}{582}} \approx 0.015$. The $ME = 1.96(0.015) \approx 0.029$. The interval is <strong>(12.7%, 18.6%)</strong>.</li>
+                        <li class="fragment"><strong>b)</strong> We are 95% confident, based on this sample, that the true proportion of all auto accidents involving teenage drivers is between 12.7% and 18.6%.</li>
+                        <li class="fragment"><strong>c)</strong> About 95% of all random samples of this size will produce confidence intervals that successfully contain the true population proportion.</li>
+                        <li class="fragment"><strong>d) Contradicts.</strong> One in five is 20%. The entire confidence interval (12.7% to 18.6%) is completely below 20%.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section data-menu-title="Seatwork 3 Solution">
+            <div class="pshs-header" style="background-color: var(--pshs-gold); color: var(--pshs-blue);">Seatwork 3: Solutions</div>
+            <div class="exercise-container">
+                <div class="problem-sidebar">
+                    <strong>Given Values:</strong><br><br>
+                    $n = 153$<br>
+                    $x = 32$<br>
+                    $\hat{p} = \frac{32}{153} \approx 20.9\%$<br>
+                    Confidence: 90%
+                </div>
+                <div class="solution-content">
+                    <ul style="font-size: 0.95em;">
+                        <li class="fragment"><strong>a)</strong> For 90%, $z^* = 1.645$. <br>$SE = \sqrt{\frac{0.209 \times 0.791}{153}} \approx 0.033$. <br>$ME = 1.645(0.033) \approx 0.054$. <br>The interval is <strong>(15.5%, 26.3%)</strong>.</li>
+                        <li class="fragment"><strong>b)</strong> To cut the margin of error in half, the sample size must be quadrupled. $153 \times 4 =$ <strong>612</strong> deer.</li>
+                        <li class="fragment"><strong>c)</strong> The sample may not be a true random representation of all deer. Legally hunted deer might not represent all locations, ages, or sexes equally (e.g., hunters often target older males).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        <section data-menu-title="Seatwork 3 Solution">
+            <div class="reference-list" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333;">
+            <h3 style="color: #0038A8; border-bottom: 2px solid #FFCD00; padding-bottom: 5px;">Reference</h3>
+    
+            <p class="left-align-slide" style="text-indent: -36px; padding-left: 36px; line-height: 1.6;">
+                De Veaux, R. D., Velleman, P. F., & Bock, D. E. (2016). 
+                <em>Stats: Modeling the World</em> (4th ed., International ed.). 
+                Pearson Education.
+            </p>
+
+            <div class="citation-details left-align-slide" style="margin-top: 15px; font-size: 0.9em; color: #555; background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #0038A8;">
+                <strong>Note for Presentation:</strong> 
+                The material regarding <em>Confidence Intervals for Proportions</em> and <em>Testing Hypotheses About Proportions</em> typically corresponds to Chapters 18 and 19 in this edition.
+            </div>
+        </div>
+        </section>
+        
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js-plugins@latest/chalkboard/plugin.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js-menu@2.1.0/menu.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js"></script>
+
+<script>
+    Reveal.initialize({
+        hash: true,
+        transition: 'fade',
+        center: false, 
+        disableLayout: true, 
+        margin: 0,
+        
+        // Chalkboard settings
+        chalkboard: {
+            boardmarkerWidth: 4,
+            chalkWidth: 5,
+            chalkEffect: 1.0,
+            theme: "whiteboard",
+            toggleNotesButton: true,
+            toggleChalkboardButton: true,
+            colorButtons: true,
+            boardHandle: true
+        },
+        
+        // Menu / TOC settings
+        menu: {
+            side: 'left',
+            width: 'normal',
+            numbers: false,
+            titleSelector: 'h1, h2, h3, h4, h5, h6, .pshs-header',
+            useTextContentForMissingTitles: false,
+            hideMissingTitles: false,
+            markers: true,
+            custom: [
+                {
+                    title: 'Tools',
+                    icon: '<i class="fa fa-tools"></i>',
+                    content: `
+                        <div class="custom-menu-panel">
+                            <h3 style="margin-top:0;">Presentation Tools</h3>
+                            <a class="custom-menu-btn" href="?print-pdf" title="Download presentation as a PDF">
+                                <i class="fa fa-file-pdf"></i> Download as PDF
+                            </a>
+                            <button class="custom-menu-btn" onclick="Reveal.toggleOverview(); Reveal.getPlugin('menu').close();" title="View all slides in a grid">
+                                <i class="fa fa-th"></i> Slide Overview
+                            </button>
+                        </div>
+                    `
+                }
+            ],
+            themes: false,
+            transitions: false,
+            openButton: true,
+            openSlideNumber: false,
+            keyboard: true,
+            sticky: false,
+            autoOpen: true,
+            delayInit: false,
+            openOnInit: false,
+            loadIcons: true
+        },
+        
+        plugins: [ RevealChalkboard, RevealMenu, RevealNotes ]
+    });
+
+    // Automatically trigger Print Dialog if ?print-pdf is in URL
+    if (window.location.search.match(/print-pdf/gi)) {
+        setTimeout(function() {
+            window.print();
+        }, 2000); 
+    }
+
+    // D3.js Graphic for Normal Curve customized for PSHS colors
+    const drawCurve = () => {
+        const width = 1000;
+        const height = 500;
+        const margin = {top: 20, right: 20, bottom: 40, left: 20};
+
+        d3.select("#d3-normal-curve").selectAll("*").remove();
+
+        const svg = d3.select("#d3-normal-curve")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const x = d3.scaleLinear().domain([-3.5, 3.5]).range([margin.left, width - margin.right]);
+        const y = d3.scaleLinear().domain([0, 0.45]).range([height - margin.bottom, margin.top]);
+
+        const normalPDF = (x) => (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * x * x);
+        const data = d3.range(-3.5, 3.5, 0.05).map(d => ({ x: d, y: normalPDF(d) }));
+
+        const area = d3.area()
+            .x(d => x(d.x))
+            .y0(height - margin.bottom)
+            .y1(d => y(d.y));
+
+        const ciData = data.filter(d => d.x >= -1.96 && d.x <= 1.96);
+
+        svg.append("path")
+            .datum(ciData)
+            .attr("fill", "var(--pshs-gold)")
+            .attr("opacity", 0.7)
+            .attr("d", area);
+
+        const line = d3.line()
+            .x(d => x(d.x))
+            .y(d => y(d.y));
+
+        svg.append("path")
+            .datum(data)
+            .attr("fill", "none")
+            .attr("stroke", "var(--pshs-blue)")
+            .attr("stroke-width", 4)
+            .attr("d", line);
+
+        const xAxis = d3.axisBottom(x).tickValues([-2, 0, 2]).tickFormat(d => {
+            if (d === 0) return "p\u0302";
+            if (d === -2) return "p\u0302 - 1.96SE";
+            if (d === 2) return "p\u0302 + 1.96SE";
+            return d;
+        });
+
+        svg.append("g")
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(xAxis)
+            .selectAll("text")
+            .attr("class", "axis-text");
+            
+        svg.append("text")
+            .attr("x", x(0))
+            .attr("y", y(0.15))
+            .attr("text-anchor", "middle")
+            .attr("fill", "var(--pshs-blue)")
+            .attr("font-weight", "bold")
+            .style("font-size", "18px")
+            .text("95% Confidence");
+    };
+
+    // D3.js Graphic for Standard Error vs Sample Size
+    const drawSECurve = () => {
+        const width = 600;
+        const height = 280;
+        const margin = {top: 10, right: 20, bottom: 50, left: 60};
+
+        d3.select("#d3-se-curve").selectAll("*").remove();
+
+        const svg = d3.select("#d3-se-curve")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const x = d3.scaleLinear().domain([10, 1000]).range([margin.left, width - margin.right]);
+        const y = d3.scaleLinear().domain([0, 0.16]).range([height - margin.bottom, margin.top]);
+
+        const data = d3.range(10, 1000, 10).map(n => ({ n: n, se: 0.5 / Math.sqrt(n) }));
+
+        const line = d3.line()
+            .x(d => x(d.n))
+            .y(d => y(d.se));
+
+        svg.append("path")
+            .datum(data)
+            .attr("fill", "none")
+            .attr("stroke", "var(--pshs-blue)")
+            .attr("stroke-width", 4)
+            .attr("d", line);
+
+        const xAxis = d3.axisBottom(x);
+        const yAxis = d3.axisLeft(y).ticks(5);
+
+        svg.append("g")
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(xAxis)
+            .selectAll("text")
+            .attr("class", "axis-text");
+
+        svg.append("g")
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(yAxis)
+            .selectAll("text")
+            .attr("class", "axis-text");
+
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height - 5)
+            .attr("text-anchor", "middle")
+            .attr("fill", "var(--pshs-blue)")
+            .style("font-size", "16px")
+            .style("font-weight", "bold")
+            .text("Sample Size (n)");
+
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2)
+            .attr("y", 15)
+            .attr("text-anchor", "middle")
+            .attr("fill", "var(--pshs-blue)")
+            .style("font-size", "16px")
+            .style("font-weight", "bold")
+            .text("Standard Error (SE)");
+    };
+
+    drawCurve();
+    drawSECurve();
+    
+    Reveal.on('slidechanged', event => {
+        if (event.currentSlide.querySelector('#d3-normal-curve')) {
+            drawCurve();
+        }
+        if (event.currentSlide.querySelector('#d3-se-curve')) {
+            drawSECurve();
+        }
+    });
+</script>
+
+</body>
+</html>
